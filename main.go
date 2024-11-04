@@ -12,38 +12,32 @@ import (
 	"time"
 )
 
-var errors = []error{}
-
 // createWebsitesFromFile Создание файлов с расширением html при существовании сайта в нужную директорию
-func createWebsitesFromFile(website string, dirPath string, threads *sync.WaitGroup) {
-	defer threads.Done()
+func createWebsitesFromFile(website string, dirPath string) error {
 	site := "http://" + website
 	resp, err := http.Get(site)
 	if err != nil {
-		errors = append(errors, err)
-		return
+		return err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		errors = append(errors, err)
-		return
+		return err
 	}
 
 	filePath := filepath.Join(dirPath, website+".html")
 	file, err := os.Create(filePath)
 	if err != nil {
-		errors = append(errors, err)
-		return
+		return err
 	}
 	defer file.Close()
 
 	_, err = file.Write(body)
 	if err != nil {
-		errors = append(errors, err)
-		return
+		return err
 	}
+	return nil
 }
 
 func main() {
@@ -78,21 +72,16 @@ func main() {
 			fmt.Println("Ошибка чтения файла ", err)
 		}
 		threads.Add(1)
-		go createWebsitesFromFile(line, *dirPath, &threads)
+		go func() {
 
-		fmt.Println(line)
+			err := createWebsitesFromFile(line, *dirPath)
+			if err != nil {
+				fmt.Println("Обработана ошибка", err)
+			}
+			threads.Done()
+		}()
 	}
 
 	threads.Wait()
-
-	if len(errors) > 0 {
-		fmt.Println("Обработаны следующие ошибки:")
-		for _, err := range errors {
-			fmt.Println(err)
-		}
-	} else {
-		fmt.Println("Обработка завершена без ошибок.")
-	}
-
 	fmt.Println(time.Since(timer))
 }
