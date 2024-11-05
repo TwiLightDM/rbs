@@ -41,12 +41,13 @@ func createWebsitesFromFile(website string, dirPath string) error {
 }
 
 func main() {
+	fg := flag.NewFlagSet("check", flag.ExitOnError)
 	txtPath := flag.String("input", "", "")
 	dirPath := flag.String("output", "", "")
 	flag.Parse()
-	if *txtPath == "" || *dirPath == "" {
+	if fg.NFlag() != 2 {
 		fmt.Println("Для того, чтобы пользоваться мной, укажите, где находится файл формата txt через -input. \nТакже укажите директорию, куда сохранить файл через -output.")
-
+		return
 	}
 
 	timer := time.Now()
